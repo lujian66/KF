@@ -190,7 +190,7 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
         return NULL;
     fOutputHitsEvent->SetEventInfo(fInputHitsEvent);
     TRestHits *hits = fInputHitsEvent->GetHits();
-
+/*
     int totalHits = fInputHitsEvent->GetNumberOfHits();
 
     int ParaNum=totalHits*(totalHits-1)/2;
@@ -221,11 +221,9 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
   int loopnum=0;
   for (int i = 0; i < totalHits; i++)
   {
-    /* code */
 
     for (int j = i+1; j < totalHits; j++)
     {
-      /* code */
       if (ArrayX[j]-ArrayX[i]==0)
       {
         fenmuequ0+=1;
@@ -268,7 +266,7 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
   bpeaks=s2->GetPositionX();
   cout<<"this first peak is "<<bpeaks[0]<<endl;
   cout<<"this second peak is "<<bpeaks[1]<<endl;
- /*   double *ArrayX =new double [totalHits] ;
+    double *ArrayX =new double [totalHits] ;
     double *ArrayY =new double [totalHits] ;
     double *ArrayZ =new double [totalHits] ;
     double *ArrayEn =new double [totalHits] ;
@@ -319,7 +317,7 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
       zGAP[i] = ArrayZ [i+1] - ArrayZ [i];
      if (fInputHitsEvent->GetID()==0) cout<<"zGAP["<<i<<"]"<<zGAP[i]<<endl;
     }
-    /*
+    
      for (int j = 0; j < totalHits-1; j++)
      {
        zGAP=ArrayZ [j+1] - ArrayZ [j];
@@ -334,9 +332,10 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
 
        fOutputHitsEvent->AddHit (ArrayX [h], ArrayY [h], ArrayZ [h], ArrayEn[h]);
      }
+     */
 //there is to use the 3sigma to delete the outlier, 
 //but there still have other way to do this things
-    TRestHits *hits = fInputHitsEvent->GetHits();
+    //TRestHits *hits = fInputHitsEvent->GetHits();
 
     int totalHits = fInputHitsEvent->GetNumberOfHits();
     double * ZArray=new double [totalHits];
@@ -383,7 +382,7 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
        if(  (z >ZMax3sigma )  || (z <ZMin3sigma ) ) continue;
        fOutputHitsEvent->AddHit (x, y, z, en);
      }
-*/
+
     if (fInputHitsEvent->GetID()==0)
     {
        cout << "output event" << endl;
@@ -401,10 +400,10 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
 
     cout << "TRestHitsdeleteProcess : Initial number of hits : " << initialHits << endl;
     cout << "TRestHitsdeleteProcess : Final number of hits : " << finalHits << endl;
-    delete [] ArrayX;
-    delete [] ArrayY;
-    delete [] ArrayZ;
-    delete [] ArrayEn;
+  //  delete [] ArrayX;
+  //  delete [] ArrayY;
+  //  delete [] ArrayZ;
+  //  delete [] ArrayEn;
 
 
 
