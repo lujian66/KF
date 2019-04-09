@@ -27,7 +27,7 @@ typedef ROOT::Math::SVector<double,6>  SVector6;
 typedef ROOT::Math::SVector<double,3>  SVector3;
 typedef ROOT::Math::SVector<double,3>  SVector3;
 Double_t lightSpeed=300000000; // units m/s
-Double_t dZ=3.0; //units mm
+//Double_t dZ=3.0; //units mm
 Double_t MeasureError=3.0; //units mm
 
 ClassImp(TRestHitsKalmanFilterProcess)
@@ -116,9 +116,12 @@ double TRestHitsKalmanFilterProcess::GetVelocityOffsetTheta02(double dZ, SVector
     double X0 = 19.55;
     double Pressure = 10.0;
     double X01 = 0.1 * X0 / (Pressure * Rho); // x01 is mm ? we need to check it!
-    double l = dZ / XThcoli(5); //mm
+    double l = sqrt(XThcoli(3)*XThcoli(3)+XThcoli(4)*XThcoli(4)+XThcoli(5)*XThcoli(5))*dZ / abs(XThcoli(5)); //mm
     double th02 = 13.6 * 13.6 / (beta *beta* (E * E * 1e-6 - ElectronMassE * ElectronMassE)) * l / X01;
-
+    
+    cout <<"dZ     "<< dZ << endl;
+    cout <<"l     "<< l << endl;
+    cout <<"th02     "<< th02 << endl;
     return th02;
 }
 
@@ -190,22 +193,6 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
             << "  MsVz["<<h-1<<"]:    "<<MsVz[h-1] \
             << "  Energy["<<h-1<<"]:    "<<Energy[h-1] \
             << "  Speed["<<h-1<<"]:    "<<Speed[h-1]<< endl;
-            //cout <<"h:  "<< h<<"  x:  "<< x <<"  y:  "<< y <<"  z:  "<< z <<"  en:  "<<en<< "  hits->fX[n]:"<<  hits->fX[n] <<"n:   "<<n<< endl;
-        }
-
-    }
-
-     for( int h = 0; h <hits->GetNumberOfHits() ; h++ )
-    {
-       //this is for test output
-      if (fOutputHitsEvent->GetID()==0 )
-        {
-            cout <<"h:  "<< h \  
-            << "  MsVx["<<h<<"]:    "<<MsVx[h]\
-            << "  MsVy["<<h<<"]:    " <<MsVy[h] \
-            << "  MsVz["<<h<<"]:    "<<MsVz[h] \
-            << "  Energy["<<h<<"]:    "<<Energy[h] \
-            << "  Speed["<<h<<"]:    "<<Speed[h]<< endl;
             //cout <<"h:  "<< h<<"  x:  "<< x <<"  y:  "<< y <<"  z:  "<< z <<"  en:  "<<en<< "  hits->fX[n]:"<<  hits->fX[n] <<"n:   "<<n<< endl;
         }
 
@@ -285,7 +272,7 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
 
         xMsary[h] = hits->GetX( h )+gaus.Gaus(0.0, MeasureError);
         yMsary[h] = hits->GetY( h )+gaus.Gaus(0.0, MeasureError);
-        zMsary[h] = hits->GetZ( h );
+        zMsary[h] = hits->GetZ( h )+gaus.Gaus(0.0, MeasureError);
     }
 
     KFx[0] = xMsary[0];
@@ -297,20 +284,20 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
 
     Double_t thetarnd0;
     Double_t Speedx,Speedy,Speedz; // m/s
-    double total_speed;
+    double total_speed , dZ;
     for(Int_t n2 = 1; n2 < Nhits; n2++){
         Speedx = MsVx[n2 - 1];
         Speedy = MsVy[n2 - 1];
         Speedz = MsVz[n2 - 1];
         total_speed = sqrt(Speedx*Speedx+Speedy*Speedy+Speedz*Speedz);
-        cout<<"n2 is: "<< n2<<" " <<"Speedx is "<< Speedx << " "<<" Speedy is "<< Speedy <<" "<<"Speedz is "<< Speedz <<" "<<" total_speed is"<< total_speed<<endl ;
+       // cout<<"n2 is: "<< n2<<" " <<"Speedx is "<< Speedx << " "<<" Speedy is "<< Speedy <<" "<<"Speedz is "<< Speedz <<" "<<" total_speed is"<< total_speed<<endl ;
         Kalmanresult[0] = KFx[n2 - 1];
         Kalmanresult[1] = KFy[n2 - 1];
         Kalmanresult[2] = KFz[n2 - 1];
         Kalmanresult[3] = KFvx[n2 - 1];
         Kalmanresult[4] = KFvy[n2 - 1];
         Kalmanresult[5] = KFvz[n2 - 1];
-        
+        dZ = zThary[n2]-zThary[n2-1];
         F(0,0) = 1.0;
         F(0,3) = dZ / Speedz;
         F(1,1) = 1.0;
@@ -324,26 +311,30 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         Expectation = F * Kalmanresult;
 
         ExpectationRecord[n2] = Expectation;
+/*
+        if ( (fOutputHitsEvent->GetID()==0) )
+        {   cout<<"this is lu test------:"<<endl;
+            cout<<"n2 is :"<< n2 <<endl;
 
-        if ( (n2==1 ) && (fOutputHitsEvent->GetID()==0) )
-        {
-            cout<<"this is lu test------:"<<endl;
-            cout<<"Kalmanresult[0] is"<< Kalmanresult[0] <<endl;
-            cout<<"F(0,0) is"<< F(0,0) <<endl;
-            cout<<"F(0,3) is"<< F(0,3) <<endl;
-            cout<<"Speedz is"<< Speedz <<endl;
-            cout<<"Expectation[0] is"<< Expectation[0] <<endl;
+            cout<<"Expectation is :"<<endl;
+            cout<< Expectation <<endl;
 
-            /* code */
+            cout<<"Kalmanresult is :"<<endl;
+            cout<< Kalmanresult <<endl;
+            //cout<<"Speedz is"<< Speedz <<endl;
+            //cout<<"Expectation[0] is"<< Expectation[0] <<endl;
+
         }  
+        */
         //ExpectationRecord[n2] = Expectation;
 
         NoiseThMatrix(0,0) = 0.0;
         NoiseThMatrix(1,1) = 0.0;
         NoiseThMatrix(2,2) = 0.0;
-       
+        cout <<"THE Kalmanresult is     " << endl;
+        cout <<Kalmanresult << endl;
         thetarnd0 = sqrt(GetVelocityOffsetTheta02(dZ, Kalmanresult, Energy[n2-1]));
-
+        cout <<"THE thetarnd0 is     "<< thetarnd0 << endl;
 /*
 	Double_t dx = xThary[n2] - xThary[n2 - 1];
 	Double_t dy = yThary[n2] - yThary[n2 - 1];
@@ -366,12 +357,30 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         NoiseThMatrix(5,5) = 2.0 * sin(thetarnd0/2) * Speedz;
 
         Priori = F * Posteriori*ROOT::Math::Transpose(F) + NoiseThMatrix * NoiseThMatrix;
+       /* 
+        if ( (fOutputHitsEvent->GetID()==0) ){
+            cout<<"thetarnd0 is :"<<endl;
+            cout<< thetarnd0 <<endl;
 
+            cout<<"sin(thetarnd0/2) is :"<<endl;
+            cout<< (sin(thetarnd0/2) )<<endl;
+            
+            cout<<"F is :"<<endl;
+            cout<< F <<endl;
+            
+            cout<<"NoiseThMatrix is :"<<endl;
+            cout<< NoiseThMatrix <<endl;
+
+            cout<<"Priori is :"<<endl;
+            cout<< Priori <<endl;
+
+        }
+        */ 
         PrioriRecord[n2] = Priori;
 
         NoiseMsMatrix(0,0) = MeasureError;
         NoiseMsMatrix(1,1) = MeasureError;
-        NoiseMsMatrix(2,2) = 0.0;
+        NoiseMsMatrix(2,2) = MeasureError;
 
         KIn = measureMatrix * Priori * ROOT::Math::Transpose(measureMatrix) + NoiseMsMatrix * NoiseMsMatrix;
 
@@ -382,8 +391,15 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         XMscoli[0] = xMsary[n2];
         XMscoli[1] = yMsary[n2];
         XMscoli[2] = zMsary[n2];
-        
-        Kalmanresult = Expectation + KalmanGain * (XMscoli - measureMatrix * Expectation);
+/*
+         if ( (fOutputHitsEvent->GetID()==0) ){
+            
+            cout<<"KalmanGain is :"<<endl;
+            cout<< KalmanGain <<endl;
+
+        }  
+  */      Kalmanresult = Expectation + KalmanGain * (XMscoli - measureMatrix * Expectation);
+      /*
         if ( (n2==1 ) && (fOutputHitsEvent->GetID()==0) )
         {
             cout<<"this is lu test:"<<endl;
@@ -392,7 +408,6 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
             cout<<"KalmanGain(0,1) is "<< KalmanGain(0,1) <<endl;
             cout<<"KalmanGain(0,2) is "<< KalmanGain(0,2) <<endl;
             cout<<"XMscoli[0] is"     << XMscoli[0] <<endl;
-            /* code */
         }  
 
         if ( (n2==2 ) && (fOutputHitsEvent->GetID()==0) )
@@ -403,9 +418,8 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
             cout<<"KalmanGain(0,1) is "<< KalmanGain(0,1) <<endl;
             cout<<"KalmanGain(0,2) is "<< KalmanGain(0,2) <<endl;
             cout<<"XMscoli[0] is"     << XMscoli[0] <<endl;
-            /* code */
         } 
-
+        */
         Posteriori = (I - KalmanGain * measureMatrix) * Priori;
         
         PosterioriRecord[n2] = Posteriori;
@@ -415,13 +429,16 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         KFx[n2] = Kalmanresult[0];
         KFy[n2] = Kalmanresult[1];
         KFz[n2] = Kalmanresult[2];
-        KFvx[n2] = Kalmanresult[3] / speedtotal;
-        KFvy[n2] = Kalmanresult[4] / speedtotal;
-        KFvz[n2] = Kalmanresult[5] / speedtotal;
+        KFvx[n2] = Kalmanresult[3];
+        KFvy[n2] = Kalmanresult[4];
+        KFvz[n2] = Kalmanresult[5];
+       // KFvx[n2] = Kalmanresult[3] / speedtotal;
+       // KFvy[n2] = Kalmanresult[4] / speedtotal;
+       // KFvz[n2] = Kalmanresult[5] / speedtotal;
     }
 
     //now we begin KF Smooth
-    
+  /*  
     SmoothResult[0] = KFx[Nhits - 1];
     SmoothResult[1] = KFy[Nhits - 1];
     SmoothResult[2] = KFz[Nhits - 1];
@@ -480,7 +497,7 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
                 //
         }
 
-*/
+
 
 
 	//?????????????????????????????
@@ -492,7 +509,7 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         KFvy[n3] = SmoothResult[4];
         KFvz[n3] = SmoothResult[5];
     }
-    
+    */
     //there still have kalman speed information But have not been saved.
     for (int h = 0; h < Nhits; h++)
     {
@@ -501,7 +518,7 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         hits->fZ[h]=KFz[h];
             
     }
-    for (int h = 0; h < Nhits; h++){
+  /*  for (int h = 0; h < Nhits; h++){
 
       if (isnan( KFz[h] ) == 1 )
         {
@@ -509,6 +526,7 @@ TRestEvent* TRestHitsKalmanFilterProcess::ProcessEvent( TRestEvent *evInput )
         }  
             
     }
+    */
     //this is for test output 
     if (fOutputHitsEvent->GetID()==0 )
     {

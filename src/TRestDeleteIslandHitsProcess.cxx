@@ -380,8 +380,80 @@ TRestEvent* TRestDeleteIslandHitsProcess::ProcessEvent( TRestEvent *evInput )
         //ZMin=GetZMinValue(z , h , ZArray , totalHits);
        
        if(  (z >ZMax3sigma )  || (z <ZMin3sigma ) ) continue;
+
        fOutputHitsEvent->AddHit (x, y, z, en);
      }
+
+     TRestHits *Outhits = fOutputHitsEvent->GetHits();
+     int OutputtotalHits = fOutputHitsEvent -> GetNumberOfHits();
+//sort
+/*
+     double Zi,Zj;
+     for (int i = 0; i < OutputtotalHits-1; i++)
+     {
+        for (int j = 0; j <OutputtotalHits-1-i ; j++)
+        {
+          Zi = fOutputHitsEvent ->GetZ( i );
+          Zj = fOutputHitsEvent ->GetZ( j );
+
+          if (Zi > Zj ) { Outhits->SwapHits( i, j );}
+   
+        }
+     }
+
+*/
+    double *ArrayX =new double [OutputtotalHits] ;
+    double *ArrayY =new double [OutputtotalHits] ;
+    double *ArrayZ =new double [OutputtotalHits] ;
+    double *ArrayEn =new double [OutputtotalHits] ;
+    for( int h = 0; h < OutputtotalHits ; h++ )
+    {
+        
+
+        ArrayX [h] = fOutputHitsEvent->GetX( h );
+        ArrayY [h] = fOutputHitsEvent->GetY( h );
+        ArrayZ [h] = fOutputHitsEvent->GetZ( h );
+        ArrayEn[h] = fOutputHitsEvent->GetEnergy( h );
+        //h is index
+        //ZMin=GetZMinValue(z , h , ZArray , totalHits);
+       
+       //if(  (z >ZMax3sigma )  || (z <ZMin3sigma ) ) continue;
+       //fOutputHitsEvent->AddHit (x, y, z, en);
+     }
+//sort
+     double tempX,tempY,tempZ ,tempEn;
+     for (int i = 0; i < OutputtotalHits-1; i++)
+     {
+        for (int j = 0; j <OutputtotalHits-1-i ; j++)
+        {
+          if (ArrayZ [j] > ArrayZ [j+1] )
+          {
+             tempZ = ArrayZ [j+1];
+             tempY = ArrayY [j+1];
+             tempX = ArrayX [j+1];
+             tempEn = ArrayEn[j+1];
+
+             ArrayZ [j+1] = ArrayZ [j];
+             ArrayY [j+1] = ArrayY [j];
+             ArrayX [j+1] = ArrayX [j];
+             ArrayEn[j+1] = ArrayEn[j];
+             
+             ArrayZ [j] = tempZ ;
+             ArrayY [j] = tempY ;
+             ArrayX [j] = tempX ;
+             ArrayEn[j] = tempEn;
+          }
+        }
+     }
+     
+    for (int h = 0; h < OutputtotalHits; h++)
+    {
+            Outhits->fX[h]=ArrayX [h];
+            Outhits->fY[h]=ArrayY [h];
+            Outhits->fZ[h]=ArrayZ [h];
+            Outhits->fEnergy[h]=ArrayEn [h];
+    }
+
 
     if (fInputHitsEvent->GetID()==0)
     {
